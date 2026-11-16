@@ -84,6 +84,12 @@ input[type=search]{flex:1 1 220px}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
 .btn.brass{background:var(--brass);border-color:var(--brass);color:var(--panel)}
 .btn:focus-visible,.chip:focus-visible,nav button:focus-visible,.card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.todobtn{display:inline-flex;align-items:center;gap:6px}.tdn{background:var(--brass);color:#fff;border-radius:999px;font:700 11px var(--f-body);padding:1px 7px;margin-left:2px}
+.tdl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}.td{display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid var(--line);padding:10px 0}.td:last-child{border-bottom:0}
+.td label{display:flex;gap:10px;align-items:flex-start;flex:1;cursor:pointer;min-width:0}.td input{width:18px;height:18px;margin-top:2px;accent-color:var(--hdr);flex:none}
+.td span{display:flex;flex-direction:column;gap:3px;min-width:0}.td small{color:var(--muted);font-size:12.5px;line-height:1.4}.td.done b{text-decoration:line-through;color:var(--muted);font-weight:500}.tdd{font-family:var(--f-mono)}
+.tdx{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0 4px}.tdx:hover{color:var(--ink)}.tdx.arm{font:600 12px var(--f-body);color:var(--bad-ink)}
+.tdadd{display:flex;gap:8px;margin-top:6px}.tdadd input{flex:1}
 .fpanel{gap:12px}.frow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.frow>.lot{min-width:84px}
 .linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--blue);text-decoration:underline;cursor:pointer}
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
@@ -304,7 +310,7 @@ function header(){
   var tabs=[['projects','Projects'],['map','Map'],['schools','Schools'],['compare','Compare'+(S.cmp.length?' ('+S.cmp.length+')':'')]];
   if(!client)tabs.push(['builders','Builders & Portals']);
   return '<header><div class="wrap"><div class="brandrow"><div class="brand"><div><div class="eyebrow"><a class="ig brandname" href="https://www.instagram.com/keys_with_sriraj/" target="_blank" rel="noopener" title="Keys with Sriraj on Instagram (@keys_with_sriraj)">Keys with Sriraj</a><span class="hello" id="hello" lang="'+GREET[GI].l+'">'+GREET[GI].t+'</span></div><div class="titlerow">'+SKYLINE+'<h1>KWC <span>Pre-Con</span> Tracker</h1>'+BUILD_SVG+'</div><div class="sub reg">Sriraj Sharma, Real Estate Agent · eXp Realty, Brokerage</div></div></div>'+
-  BND_BADGE+(PUBLIC?'':'<div class="tools"><div class="seg" role="group" aria-label="View"><button data-view="client" aria-pressed="'+client+'">Client view</button><button data-view="realtor" aria-pressed="'+(!client)+'">'+(KEYPW?'Realtor view':'🔒 Realtor view')+'</button></div>'+(KEYPW?'<button class="lockbtn" data-act="lock">Lock</button>':'')+'</div>')+'</div><nav>'+
+  BND_BADGE+(PUBLIC?'':'<div class="tools"><div class="seg" role="group" aria-label="View"><button data-view="client" aria-pressed="'+client+'">Client view</button><button data-view="realtor" aria-pressed="'+(!client)+'">'+(KEYPW?'Realtor view':'🔒 Realtor view')+'</button></div>'+todoBtn()+(KEYPW?'<button class="lockbtn" data-act="lock">Lock</button>':'')+'</div>')+'</div><nav>'+
   tabs.map(function(t){return '<button data-tab="'+t[0]+'" aria-current="'+(S.tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</nav></div></header>'}
 
 function projectsView(){
@@ -661,6 +667,7 @@ app.addEventListener('click',function(e){
   if(a==='pwtoggle'){var pi=document.getElementById('pw');if(pi){var show=pi.type==='password';pi.type=show?'text':'password';t.setAttribute('aria-pressed',String(show));t.setAttribute('aria-label',show?'Hide password':'Show password');t.innerHTML=show?EYE_SHUT:EYE_OPEN;pi.focus();var n=pi.value.length;try{pi.setSelectionRange(n,n)}catch(err){}}return}
   if(a==='unlock'){unlockWith((document.getElementById('pw')||{}).value||'',true);return}
   if(a==='lock'){lockNow();return}
+  if(a==='todo'){todoOpen();return}
   if(a==='close'){S.unlock=false;S.open=null;S.edit=null;S.bedit=null;S.confirm=null;render();return}
   if(a==='new'){S.edit={city:'Kitchener',status:'Verify',pin:'city',lat:43.4516,lng:-80.4925,school:{}};render();return}
   if(a==='fin'){S.showFin=!S.showFin;render();return}
@@ -692,6 +699,44 @@ app.addEventListener('input',function(e){
 app.addEventListener('change',function(e){if(e.target.id==='sort'){S.sort=e.target.value;render()}if(e.target.id==='area'){S.area=e.target.value;render()}if(e.target.id==='ssort'){S.ssort=e.target.value;render()}
   var fm=/^fin_(rate|down|amort|ins)$/.exec(e.target.id);if(fm){var fv=parseFloat(e.target.value);if(!isNaN(fv)&&fv>=0&&!(fm[1]==='amort'&&fv<1)){FIN[fm[1]]=fv;saveFin();render()}else toast('Enter a number of 0 or more.')}});
 
+
+/* To-do list: realtor view only, stored in the artifact database (owner/editors only) */
+var TODO={on:false,items:[],open:false,err:'',col:null,loading:true};
+function todoPending(){return TODO.items.filter(function(t){return !t.done}).length}
+function todoBtn(){if(client||!TODO.on)return '';var n=todoPending();return '<button class="lockbtn todobtn" id="todobtn" data-act="todo" aria-label="My to-do list, '+n+' pending"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><circle cx="5" cy="18" r="1.3"/></svg>To-do'+(n?'<span class="tdn">'+n+'</span>':'')+'</button>'}
+function todoBadge(){var b=document.getElementById('todobtn');if(!b){if(!client&&TODO.on)render();return}var t=document.createElement('div');t.innerHTML=todoBtn();if(t.firstChild)b.replaceWith(t.firstChild)}
+function todoOpen(){TODO.open=true;todoPaint();var i=document.getElementById('tdnew');}
+function todoClose(){TODO.open=false;var r=document.getElementById('todop');if(r)r.innerHTML='';var b=document.getElementById('todobtn');if(b)b.focus()}
+function todoPaint(){var r=document.getElementById('todop');if(!r){r=document.createElement('div');r.id='todop';document.body.appendChild(r)}
+  if(!TODO.open){r.innerHTML='';return}
+  var pend=TODO.items.filter(function(t){return !t.done}),done=TODO.items.filter(function(t){return t.done});
+  function row(t){return '<li class="td'+(t.done?' done':'')+'"><label><input type="checkbox" data-tdc="'+esc(t.id)+'"'+(t.done?' checked':'')+'><span><b>'+esc(t.title||'')+'</b>'+(t.detail?'<small>'+esc(t.detail)+'</small>':'')+(t.done&&t.doneAt?'<small class="tdd">Done '+esc(t.doneAt)+'</small>':'')+'</span></label><button class="tdx" data-tdx="'+esc(t.id)+'" aria-label="Delete">×</button></li>'}
+  r.innerHTML='<div class="scrim" data-tdclose="1"></div><div class="sheet" role="dialog" aria-label="My to-do list"><div class="in">'+
+   '<div class="top" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>My to-do</h2><button class="btn ghost" data-tdclose="1">Close</button></div>'+
+   '<p class="meta">Only you can see this list. Tick items off as you finish them.</p>'+
+   (TODO.err?'<div class="note">'+esc(TODO.err)+'</div>':'')+
+   (TODO.loading&&!TODO.items.length?'<div class="meta">Loading…</div>':'')+
+   '<div class="sec"><h4>Outstanding · '+pend.length+'</h4>'+(pend.length?'<ul class="tdl">'+pend.map(row).join('')+'</ul>':'<div class="meta">All done. Nice work.</div>')+
+   '<form class="tdadd" id="tdform"><input id="tdnew" placeholder="Add a to-do" maxlength="200" aria-label="New to-do"><button class="btn" type="submit">Add</button></form></div>'+
+   (done.length?'<div class="sec"><h4>Done · '+done.length+'</h4><ul class="tdl">'+done.map(row).join('')+'</ul></div>':'')+
+   '</div></div>'}
+document.addEventListener('click',function(e){var t=e.target.closest('[data-tdclose],[data-tdx]');if(!t)return;
+  if(t.dataset.tdclose){todoClose();return}
+  if(t.dataset.tdx&&TODO.col){if(t.dataset.arm!=='1'){t.dataset.arm='1';t.textContent='Delete?';t.classList.add('arm');return}TODO.col.doc(t.dataset.tdx).delete().catch(function(){toast('Could not delete. Try again.')})}});
+document.addEventListener('change',function(e){var id=e.target&&e.target.dataset&&e.target.dataset.tdc;if(!id||!TODO.col)return;var on=e.target.checked;
+  var d=new Date();TODO.col.doc(id).update({done:on,doneAt:on?d.toISOString().slice(0,10):''}).catch(function(){toast('Could not save. Try again.');e.target.checked=!on})});
+document.addEventListener('submit',function(e){if(e.target.id!=='tdform')return;e.preventDefault();var i=document.getElementById('tdnew');var v=(i.value||'').trim();if(!v||!TODO.col)return;
+  var mx=TODO.items.reduce(function(m,t){return Math.max(m,+t.order||0)},0);
+  TODO.col.add({title:v,detail:'',done:false,doneAt:'',order:mx+1,created:new Date().toISOString().slice(0,10)}).then(function(){var j=document.getElementById('tdnew');if(j){j.value='';j.focus()}}).catch(function(){toast('Could not add. Try again.')})});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&TODO.open)todoClose()});
+(async function(){try{if(!window.claude||!window.claude.use)return;var db=await window.claude.use('db');if(!db)return;
+  TODO.col=db.collection('todos');TODO.on=true;todoBadge();
+  var tm=setTimeout(function(){if(TODO.loading){TODO.err='Your list can’t be reached right now. It may be out of date.';if(TODO.open)todoPaint()}},10000);
+  TODO.col.orderBy('order').onSnapshot(function(q){TODO.items=q.docs.map(function(d){var x=d.data()||{};x.id=d.id;return x});
+    if(!q.metadata||!q.metadata.fromCache){clearTimeout(tm);TODO.loading=false;TODO.err=''}
+    todoBadge();if(TODO.open){var f=document.activeElement&&document.activeElement.id;todoPaint();if(f==='tdnew'){var i=document.getElementById('tdnew');if(i)i.focus()}}},
+   function(err){clearTimeout(tm);TODO.loading=false;TODO.err=(err&&err.code==='permission_denied')?'Only the tracker owner can see this list.':'Your list can’t be loaded right now.';if(TODO.open)todoPaint()});
+}catch(e){}})();
 render();
 try{if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)setInterval(function(){GI=(GI+1)%GREET.length;var e=document.getElementById('hello');if(e){e.classList.remove('in');void e.offsetWidth;e.textContent=GREET[GI].t;e.lang=GREET[GI].l;e.classList.add('in')}},2600)}catch(e){}
 (function(){var pw=null;try{pw=sessionStorage.getItem('pw')}catch(e){}if(pw)unlockWith(pw,false)})();
