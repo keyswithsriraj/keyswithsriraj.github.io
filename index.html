@@ -241,7 +241,10 @@ function splitSec(){var pub=JSON.parse(JSON.stringify(DATA)),sec={projects:{},bu
   return {pub:pub,sec:sec}}
 function unlockWith(pw,interactive){return decryptSec(pw).then(function(o){mergeSec(o);KEYPW=pw;try{sessionStorage.setItem('pw',pw)}catch(e){}client=false;S.unlock=false;S.pwErr='';render();if(interactive)toast('Realtor view unlocked')},function(){if(interactive){S.pwErr='That password is not right. Try again.';render()}})}
 function lockNow(){try{sessionStorage.removeItem('pw')}catch(e){}location.reload()}
-function setView(v){if(PUBLIC)return;if(v==='client'){client=true;if(S.tab==='builders')S.tab='projects';render();return}
+var LOCKT=null;
+function softLock(){clearTimeout(LOCKT);LOCKT=null;if(!KEYPW)return;DATA.projects.forEach(function(p){PF.forEach(function(f){delete p[f]})});DATA.builders.forEach(function(b){BF.forEach(function(f){delete b[f]})});KEYPW=null;try{sessionStorage.removeItem('pw')}catch(e){}client=true;if(S.tab==='builders')S.tab='projects';S.edit=null;S.bedit=null;render();toast('Realtor view locked')}
+function setView(v){if(PUBLIC)return;if(v==='client'){client=true;if(S.tab==='builders')S.tab='projects';render();clearTimeout(LOCKT);if(KEYPW){LOCKT=setTimeout(function(){if(client)softLock()},30000);toast('Realtor view locks in 30 seconds')}return}
+  clearTimeout(LOCKT);LOCKT=null;
   if(KEYPW){client=false;render();return}
   S.unlock=true;S.pwErr='';render();var i=document.getElementById('pw');if(i)i.focus()}
 function fam(t){t=(t||'').toLowerCase();return t.indexOf('town')>=0?'Towns':t.indexOf('detach')>=0?'Detached':t.indexOf('condo')>=0?'Condo':'Other'}
