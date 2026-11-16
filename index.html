@@ -84,6 +84,8 @@ input[type=search]{flex:1 1 220px}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
 .btn.brass{background:var(--brass);border-color:var(--brass);color:var(--panel)}
 .btn:focus-visible,.chip:focus-visible,nav button:focus-visible,.card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.fpanel{gap:12px}.frow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.frow>.lot{min-width:84px}
+.linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--blue);text-decoration:underline;cursor:pointer}
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
 .stat{border-top:3px solid var(--ink);padding:8px 2px 0}
 .stat b{display:block;font-family:var(--f-display);font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
@@ -287,6 +289,7 @@ function filtered(){
     if(S.verdict&&S.verdict!=='All'){var cv=carry(p);if(!cv||cv.verdict!==S.verdict)return false}
     if(S.status==='★'){if(favs.indexOf(p.id)<0)return false}
     else if(S.status!=='All'&&p.status!==S.status)return false;
+    if(!S.showVer&&S.status!=='Verify'&&S.status!=='★'&&p.status==='Verify')return false;
     if(q&&(p.name+' '+p.builder+' '+p.area+' '+p.type).toLowerCase().indexOf(q)<0)return false;
     return true});
   r.sort(function(a,b){
@@ -316,16 +319,25 @@ function projectsView(){
    '<div class="stat" style="border-color:var(--warn)"><b>'+ver+'</b><small>Need verifying</small></div></div>';
   if(!client&&DATA.sync&&DATA.sync.at) h+='<div class="note" style="border-color:var(--ok)"><b>Team sheet sync:</b> last change '+esc(DATA.sync.at)+(DATA.sync.changes&&DATA.sync.changes.length?' · '+esc(DATA.sync.changes.slice(0,6).join('; '))+(DATA.sync.changes.length>6?' …':''):'')+'</div>';
   if(!client) h+='<div class="note">Data from public aggregator pages and the team builder sheet (spring 2026), merged '+esc(DATA.updated)+'. Prices and dates go stale fast. Confirm each project in its broker portal, then set "Last verified".</div>';
-  h+='<div class="tools"><input type="search" id="q" placeholder="Search project, builder, area" value="'+esc(S.q)+'"><select id="sort"><option value="name">Sort: Name</option><option value="price"'+(S.sort==='price'?' selected':'')+'>Sort: Price from</option><option value="city"'+(S.sort==='city'?' selected':'')+'>Sort: City</option><option value="be"'+(S.sort==='be'?' selected':'')+'>Sort: Lowest break-even rent</option><option value="cf"'+(S.sort==='cf'?' selected':'')+'>Sort: Best cash flow</option></select><button class="btn ghost" data-act="fin">Investor assumptions</button><button class="btn ghost" data-act="dlhtml" hidden id="dl1">Download dashboard</button><button class="btn ghost" data-act="dlcsv" hidden id="dl2">Download CSV</button>'+(client?'':'<button class="btn brass" data-act="new">+ Add project</button>')+'</div>';
-  h+='<div class="chips">'+['All'].concat(CITIES).map(function(c){return '<button class="chip" data-city="'+c+'" aria-pressed="'+(S.city===c)+'">'+c+'</button>'}).join('')+'</div>';
-  var areas=DATA.projects.filter(function(p){return p.area&&(S.city==='All'||p.city===S.city)}).map(function(p){return p.area}).filter(function(a,i,arr){return arr.indexOf(a)===i}).sort();
-  h+='<div class="chips">'+['All','Towns','Detached','Condo'].map(function(c){return '<button class="chip" data-fam="'+c+'" aria-pressed="'+(S.fam===c)+'">'+(c==='All'?'All home types':c)+'</button>'}).join('')+
-   '<select id="area" aria-label="Neighbourhood"><option value="All">All neighbourhoods</option>'+areas.map(function(a){return '<option'+(S.area===a?' selected':'')+'>'+esc(a)+'</option>'}).join('')+'</select></div>';
-  var vc={pos:0,neu:0,neg:0,none:0};all.forEach(function(p){var c=carry(p);if(c&&c.verdict)vc[c.verdict]++;else vc.none++});
-  if(S.showFin)h+='<div class="sec"><h4>Investor assumptions · used on every project</h4>'+finInputs()+'<div class="meta">Saved on this device only. Property tax uses 2026 city rates: Kitchener 1.406% and Guelph 1.494% (official); Waterloo 1.432% and Cambridge 1.512% are unverified estimates.</div></div>';
-  h+='<div class="chips"><span class="lot" style="align-self:center">CASH FLOW</span>'+[['All','All'],['pos','Positive '+vc.pos],['neu','Breakeven '+vc.neu],['neg','Negative '+vc.neg]].map(function(c){return '<button class="chip vchip vc-'+c[0]+'" data-verdict="'+c[0]+'" aria-pressed="'+((S.verdict||'All')===c[0])+'">'+c[1]+'</button>'}).join('')+'<span class="meta" style="align-self:center">'+vc.none+' without rent or price</span></div>';
-  h+='<div class="chips">'+['All','★'].concat(STATUSES).map(function(c){return '<button class="chip" data-status="'+c+'" aria-pressed="'+(S.status===c)+'">'+(c==='★'?'★ Shortlist':c)+'</button>'}).join('')+'</div>';
+  var nf=(S.fam!=='All'?1:0)+(S.area!=='All'?1:0)+((S.verdict&&S.verdict!=='All')?1:0)+(S.status!=='All'?1:0)+(S.sort!=='name'?1:0)+(S.showVer?1:0);
+  h+='<div class="tools"><input type="search" id="q" placeholder="Search project, builder, area" value="'+esc(S.q)+'"><button class="btn ghost" data-act="filt" aria-expanded="'+(!!S.showFilt)+'">'+(S.showFilt?'Hide filters':'Filters')+(nf?' · '+nf:'')+'</button><button class="btn ghost" data-act="dlhtml" hidden id="dl1">Download dashboard</button><button class="btn ghost" data-act="dlcsv" hidden id="dl2">Download CSV</button>'+(client?'':'<button class="btn brass" data-act="new">+ Add project</button>')+'</div>';
+  h+='<div class="chips">'+['All'].concat(CITIES).map(function(c){return '<button class="chip" data-city="'+c+'" aria-pressed="'+(S.city===c)+'">'+c+'</button>'}).join('')+(favs.length?'<button class="chip" data-status="'+(S.status==='★'?'All':'★')+'" aria-pressed="'+(S.status==='★')+'">★ Shortlist '+favs.length+'</button>':'')+'</div>';
+  var nVer=all.filter(function(p){return p.status==='Verify'}).length;
+  if(S.showFilt){
+    var areas=DATA.projects.filter(function(p){return p.area&&(S.city==='All'||p.city===S.city)}).map(function(p){return p.area}).filter(function(a,i,arr){return arr.indexOf(a)===i}).sort();
+    var vc={pos:0,neu:0,neg:0,none:0};all.forEach(function(p){var c=carry(p);if(c&&c.verdict)vc[c.verdict]++;else vc.none++});
+    h+='<div class="sec fpanel">'+
+     '<div class="frow"><span class="lot">SORT</span><select id="sort"><option value="name">Name</option><option value="price"'+(S.sort==='price'?' selected':'')+'>Price from</option><option value="city"'+(S.sort==='city'?' selected':'')+'>City</option><option value="be"'+(S.sort==='be'?' selected':'')+'>Lowest break-even rent</option><option value="cf"'+(S.sort==='cf'?' selected':'')+'>Best cash flow</option></select></div>'+
+     '<div class="frow"><span class="lot">HOME TYPE</span><div class="chips">'+['All','Towns','Detached','Condo'].map(function(c){return '<button class="chip" data-fam="'+c+'" aria-pressed="'+(S.fam===c)+'">'+c+'</button>'}).join('')+'</div></div>'+
+     '<div class="frow"><span class="lot">AREA</span><select id="area" aria-label="Neighbourhood"><option value="All">All neighbourhoods</option>'+areas.map(function(a){return '<option'+(S.area===a?' selected':'')+'>'+esc(a)+'</option>'}).join('')+'</select></div>'+
+     '<div class="frow"><span class="lot">STATUS</span><div class="chips">'+['All','★'].concat(STATUSES).map(function(c){return '<button class="chip" data-status="'+c+'" aria-pressed="'+(S.status===c)+'">'+(c==='★'?'★ Shortlist':c)+'</button>'}).join('')+'<button class="chip" data-act="ver" aria-pressed="'+(!!S.showVer)+'">Include unconfirmed ('+nVer+')</button></div></div>'+
+     '<div class="frow"><span class="lot">CASH FLOW</span><div class="chips">'+[['All','All'],['pos','Positive '+vc.pos],['neu','Breakeven '+vc.neu],['neg','Negative '+vc.neg]].map(function(c){return '<button class="chip vchip vc-'+c[0]+'" data-verdict="'+c[0]+'" aria-pressed="'+((S.verdict||'All')===c[0])+'">'+c[1]+'</button>'}).join('')+'<button class="chip" data-act="fin" aria-pressed="'+(!!S.showFin)+'">Investor assumptions</button></div></div>'+
+     (nf?'<div><button class="btn ghost" data-act="clrf">Clear filters</button></div>':'')+'</div>';
+    if(S.showFin)h+='<div class="sec"><h4>Investor assumptions · used on every project</h4>'+finInputs()+'<div class="meta">Saved on this device only. Property tax uses 2026 city rates: Kitchener 1.406% and Guelph 1.494% (official); Waterloo 1.432% and Cambridge 1.512% are unverified estimates.</div></div>';
+  }
+  var hid=(!S.showVer&&S.status!=='Verify')?nVer:0;
   if(!list.length) return h+'<div class="empty">No projects match these filters.</div>';
+  if(hid)h+='<div class="meta">'+list.length+' projects shown · '+hid+' with unconfirmed details hidden. <button class="linkbtn" data-act="ver">Show them</button></div>';
   h+='<div class="list">'+list.map(card).join('')+'</div>';
   return h}
 
@@ -333,10 +345,8 @@ function card(p){
   var fav=favs.indexOf(p.id)>=0;
   return '<div class="card" tabindex="0" data-open="'+p.id+'"><div class="top"><div><div class="lot">'+esc(p.city.toUpperCase())+(p.area?' · '+esc(p.area.toUpperCase()):'')+'</div><h3>'+esc(p.name)+'</h3><div class="meta">'+esc(p.builder)+' · '+(p.tenure?esc(p.tenure)+' ':'')+esc(p.type)+'</div></div>'+
   '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span class="pill '+stCls(p.status)+'">'+esc(p.status)+'</span><button class="star" data-fav="'+p.id+'" aria-pressed="'+fav+'" aria-label="Shortlist">'+(fav?'★':'☆')+'</button></div></div>'+
-  '<div class="row"><span>From</span><span class="v">'+money(p.priceFrom)+'</span></div>'+
-  '<div class="row"><span>$/sq ft</span><span class="v">'+(psf(p)?'$'+psf(p):'—')+'</span></div>'+
-  (function(){var c=carry(p);if(!c)return '';return '<div class="row"><span>Break-even rent</span><span class="v">'+money(Math.round(c.total))+(c.verdict?' <span class="pill v-'+c.verdict+'" style="font-size:10px">'+(c.net>=0?'+':'−')+'$'+Math.abs(Math.round(c.net))+'</span>':'')+'</span></div>'})()+
-  '<div class="row"><span>Occupancy</span><span class="v">'+esc(p.occupancy||'—')+'</span></div>'+
+  (p.priceFrom?'<div class="row"><span>From</span><span class="v">'+money(p.priceFrom)+'</span></div>':'')+
+  (p.occupancy&&!/^(TBD|TBA)$/i.test(p.occupancy)?'<div class="row"><span>Occupancy</span><span class="v">'+esc(p.occupancy)+'</span></div>':'')+
   (function(){var ns=nearSchools(p,'All',1)[0];
     if(p.school&&p.school.name){var d=SCH.filter(function(x){return x.n===p.school.name})[0];return '<div class="row"><span>School</span><span class="v">'+esc(p.school.name.replace(/ (Public|Catholic Elementary|Catholic) School$/,''))+' '+(d?avgTag(d.avg):'')+'</span></div>'}
     return '<div class="row"><span>Nearest school</span><span class="v">'+esc(ns.s.n.replace(/ (Public|Catholic Elementary|Catholic) School$/,''))+' '+avgTag(ns.s.avg)+'</span></div>'})()+'</div>'}
@@ -654,6 +664,9 @@ app.addEventListener('click',function(e){
   if(a==='close'){S.unlock=false;S.open=null;S.edit=null;S.bedit=null;S.confirm=null;render();return}
   if(a==='new'){S.edit={city:'Kitchener',status:'Verify',pin:'city',lat:43.4516,lng:-80.4925,school:{}};render();return}
   if(a==='fin'){S.showFin=!S.showFin;render();return}
+  if(a==='filt'){S.showFilt=!S.showFilt;render();return}
+  if(a==='ver'){S.showVer=!S.showVer;render();return}
+  if(a==='clrf'){S.fam='All';S.area='All';S.verdict='All';S.status='All';S.sort='name';S.showVer=false;render();return}
   if(a==='dlhtml'){var fn='KWC-PreCon-Tracker-'+(client?'client-':'')+new Date().toISOString().slice(0,10)+'.html';offlineDoc().then(function(d){offer(fn,d)});return}
   if(a==='dlcsv'){offer('KWC-PreCon-Projects-'+new Date().toISOString().slice(0,10)+'.csv',buildCsv());return}
   if(a==='schmap'){S.schMap=!S.schMap;render();return}
