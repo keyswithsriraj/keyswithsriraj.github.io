@@ -90,6 +90,7 @@ input[type=search]{flex:1 1 220px}
 .td span{display:flex;flex-direction:column;gap:3px;min-width:0}.td small{color:var(--muted);font-size:12.5px;line-height:1.4}.td.done b{text-decoration:line-through;color:var(--muted);font-weight:500}.tdd{font-family:var(--f-mono)}
 .tdx{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0 4px}.tdx:hover{color:var(--ink)}.tdx.arm{font:600 12px var(--f-body);color:var(--bad-ink)}
 .tdadd{display:flex;gap:8px;margin-top:6px}.tdadd input{flex:1}
+.contact .cperson{display:flex;flex-direction:column;gap:2px}.contact .cperson b{font-size:16px}.contact a.v{color:var(--blue);text-decoration:none}.contact a.v:hover{text-decoration:underline}
 .fpanel{gap:12px}.frow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.frow>.lot{min-width:84px}
 .linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--blue);text-decoration:underline;cursor:pointer}
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
@@ -242,7 +243,7 @@ function splitSec(){var pub=JSON.parse(JSON.stringify(DATA)),sec={projects:{},bu
 function unlockWith(pw,interactive){return decryptSec(pw).then(function(o){mergeSec(o);KEYPW=pw;try{sessionStorage.setItem('pw',pw)}catch(e){}client=false;S.unlock=false;S.pwErr='';render();if(interactive)toast('Realtor view unlocked')},function(){if(interactive){S.pwErr='That password is not right. Try again.';render()}})}
 function lockNow(){try{sessionStorage.removeItem('pw')}catch(e){}location.reload()}
 var LOCKT=null;
-function softLock(){clearTimeout(LOCKT);LOCKT=null;if(!KEYPW)return;DATA.projects.forEach(function(p){PF.forEach(function(f){delete p[f]})});DATA.builders.forEach(function(b){BF.forEach(function(f){delete b[f]})});KEYPW=null;try{sessionStorage.removeItem('pw')}catch(e){}client=true;if(S.tab==='builders')S.tab='projects';S.edit=null;S.bedit=null;render();toast('Realtor view locked')}
+function softLock(){clearTimeout(LOCKT);LOCKT=null;if(!KEYPW)return;DATA.projects.forEach(function(p){PF.forEach(function(f){delete p[f]})});DATA.builders.forEach(function(b){BF.forEach(function(f){delete b[f]})});KEYPW=null;try{sessionStorage.removeItem('pw')}catch(e){}client=true;if(S.tab==='builders')S.tab='projects';S.edit=null;S.bedit=null;S.cedit=null;render();toast('Realtor view locked')}
 function setView(v){if(PUBLIC)return;if(v==='client'){client=true;if(S.tab==='builders')S.tab='projects';render();clearTimeout(LOCKT);if(KEYPW){LOCKT=setTimeout(function(){if(client)softLock()},30000);toast('Realtor view locks in 30 seconds')}return}
   clearTimeout(LOCKT);LOCKT=null;
   if(KEYPW){client=false;render();return}
@@ -466,7 +467,7 @@ function detail(p){
    '<div class="row"><span>Last verified</span><span class="v" style="color:'+(p.verified?'var(--ok)':'var(--warn)')+'">'+esc(p.verified||'Not yet')+'</span></div>'+
    (p.notes?'<div class="meta">'+esc(p.notes)+'</div>':'')+
    '<div class="meta">Source: '+(p.sourceUrl?'<a href="'+esc(p.sourceUrl)+'" target="_blank" rel="noopener" style="color:var(--blue)">'+esc(p.source)+'</a>':esc(p.source||'—'))+'</div></div>'+
-  termsSec(p)+askCard(p)+dealSec(p)+similarSec(p)+investSec(p)+rebateSec(p)+
+  contactSec(p)+termsSec(p)+askCard(p)+dealSec(p)+similarSec(p)+investSec(p)+rebateSec(p)+
   schoolsSec(p,s)+
   '<div class="sec"><h4>Around this site</h4>'+(p.pin!=='exact'?'<div class="note">Pin is '+(p.pin==='city'?'a city-level placeholder':'neighbourhood-level')+'. Results are only as close as the pin.</div>':'')+
    '<div class="links">'+[['grocery store','Groceries'],['pharmacy','Pharmacy'],['park','Parks'],['hospital','Hospital'],['bus stop ION','Transit / ION'],['GO station','GO station'],['place of worship','Places of worship'],['Indian grocery','South Asian grocery']].map(function(a){return '<a href="'+gm(a[0],p)+'" target="_blank" rel="noopener">'+a[1]+'<small>Open map</small></a>'}).join('')+
@@ -671,7 +672,13 @@ app.addEventListener('click',function(e){
   if(a==='unlock'){unlockWith((document.getElementById('pw')||{}).value||'',true);return}
   if(a==='lock'){lockNow();return}
   if(a==='todo'){todoOpen();return}
-  if(a==='close'){S.unlock=false;S.open=null;S.edit=null;S.bedit=null;S.confirm=null;render();return}
+  if(a==='cedit'){S.cedit=S.open;render();var ci=document.getElementById('c_name');if(ci)ci.focus();return}
+  if(a==='ccancel'){S.cedit=null;render();return}
+  if(a==='csave'){if(!CON.col||!S.open)return;var gv=function(k){var e=document.getElementById('c_'+k);return e?e.value.trim():''};
+    var em=gv('email');if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast('That email address doesn\u2019t look right.');return}
+    var rec={name:gv('name'),role:gv('role'),phone:gv('phone'),email:em,notes:gv('notes'),updated:new Date().toISOString().slice(0,10)};
+    var pid=S.open;CON.col.doc(pid).set(rec).then(function(){CON.map[pid]=rec;S.cedit=null;render();toast('Contact saved')},function(){toast('Could not save. Try again.')});return}
+  if(a==='close'){S.unlock=false;S.open=null;S.cedit=null;S.edit=null;S.bedit=null;S.confirm=null;render();return}
   if(a==='new'){S.edit={city:'Kitchener',status:'Verify',pin:'city',lat:43.4516,lng:-80.4925,school:{}};render();return}
   if(a==='fin'){S.showFin=!S.showFin;render();return}
   if(a==='filt'){S.showFilt=!S.showFilt;render();return}
@@ -702,6 +709,38 @@ app.addEventListener('input',function(e){
 app.addEventListener('change',function(e){if(e.target.id==='sort'){S.sort=e.target.value;render()}if(e.target.id==='area'){S.area=e.target.value;render()}if(e.target.id==='ssort'){S.ssort=e.target.value;render()}
   var fm=/^fin_(rate|down|amort|ins)$/.exec(e.target.id);if(fm){var fv=parseFloat(e.target.value);if(!isNaN(fv)&&fv>=0&&!(fm[1]==='amort'&&fv<1)){FIN[fm[1]]=fv;saveFin();render()}else toast('Enter a number of 0 or more.')}});
 
+
+/* Project sales contacts: realtor view only, stored in the artifact database (owner/editors only) */
+var CON={on:false,map:{},col:null,loading:true,err:''};
+function contactSec(p){if(client)return '';
+  var c=CON.map[p.id]||null, b=DATA.builders.filter(function(x){return x.name===p.builder})[0]||{};
+  var bn=b.rep||b.contact||'', h='<div class="sec contact"><h4>Point of contact · realtor only</h4>';
+  if(S.cedit===p.id&&CON.on){c=c||{};
+    return h+'<div class="form">'+
+     '<label>Salesperson name<input id="c_name" value="'+esc(c.name||'')+'" autocomplete="off"></label>'+
+     '<label>Role (e.g. Sales rep, Sales manager)<input id="c_role" value="'+esc(c.role||'')+'"></label>'+
+     '<label>Phone<input id="c_phone" type="tel" value="'+esc(c.phone||'')+'"></label>'+
+     '<label>Email<input id="c_email" type="email" value="'+esc(c.email||'')+'"></label>'+
+     '<label class="full">Notes (best time to call, sales centre hours)<input id="c_notes" value="'+esc(c.notes||'')+'"></label></div>'+
+     '<div class="tools"><button class="btn brass" data-act="csave">Save contact</button><button class="btn ghost" data-act="ccancel">Cancel</button></div></div>'}
+  if(c&&(c.name||c.phone||c.email)){
+    h+='<div class="cperson"><b>'+esc(c.name||'Name not added')+'</b>'+(c.role?'<span class="meta">'+esc(c.role)+'</span>':'')+'</div>'+
+     (c.phone?'<div class="row"><span>Phone</span><a class="v" href="tel:'+esc(c.phone.replace(/[^0-9+]/g,''))+'">'+esc(c.phone)+'</a></div>':'')+
+     (c.email?'<div class="row"><span>Email</span><a class="v" href="mailto:'+esc(c.email)+'">'+esc(c.email)+'</a></div>':'')+
+     (c.notes?'<div class="meta">'+esc(c.notes)+'</div>':'')+
+     (c.updated?'<div class="meta">Updated '+esc(c.updated)+'</div>':'')}
+  else{h+='<div class="meta">No salesperson added for this project yet.</div>';
+    if(p.rep)h+='<div class="row"><span>From team sheet</span><span class="v" style="text-align:right;max-width:62%">'+esc(p.rep)+'</span></div>';
+    if(bn||b.phone||b.email)h+='<div class="row"><span>Builder’s general contact</span><span class="v" style="text-align:right;max-width:62%">'+esc([bn,b.phone,b.email].filter(Boolean).join(' · '))+'</span></div>'}
+  if(CON.on)h+='<div class="tools"><button class="btn ghost" data-act="cedit">'+(c?'Edit contact':'Add contact')+'</button></div>';
+  else h+='<div class="meta">'+(CON.err||'Open the tracker in Claude to add or edit contacts.')+'</div>';
+  return h+'</div>'}
+(async function(){try{if(!window.claude||!window.claude.use)return;var db=await window.claude.use('db');if(!db)return;
+  CON.col=db.collection('contacts');CON.on=true;if(S.open&&!client&&S.cedit==null)render();
+  CON.col.onSnapshot(function(q){var m={};q.docs.forEach(function(d){m[d.id]=d.data()||{}});CON.map=m;CON.loading=false;
+    if(S.open&&!client&&S.cedit==null)render()},
+   function(err){CON.on=false;CON.err=(err&&err.code==='permission_denied')?'Only the tracker owner can see contacts.':'Contacts can’t be loaded right now.';if(S.open&&!client)render()});
+}catch(e){}})();
 
 /* To-do list: realtor view only, stored in the artifact database (owner/editors only) */
 var TODO={on:false,items:[],open:false,err:'',col:null,loading:true};
