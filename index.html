@@ -91,6 +91,9 @@ input[type=search]{flex:1 1 220px}
 .tdx{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0 4px}.tdx:hover{color:var(--ink)}.tdx.arm{font:600 12px var(--f-body);color:var(--bad-ink)}
 .tdadd{display:flex;gap:8px;margin-top:6px}.tdadd input{flex:1}
 .contact .cperson{display:flex;flex-direction:column;gap:2px}.contact .cperson b{font-size:16px}.contact a.v{color:var(--blue);text-decoration:none}.contact a.v:hover{text-decoration:underline}
+.portal{border-top:1px dashed var(--line);padding-top:8px;margin-top:2px;display:flex;flex-direction:column;gap:6px}.plink{display:inline-flex;align-items:center;gap:5px;color:var(--blue);font-weight:600;text-decoration:none}.plink:hover{text-decoration:underline}
+.mini{font:600 11px var(--f-body);background:var(--soft);border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:2px 7px;cursor:pointer;margin-left:4px}.pwdots{letter-spacing:.12em}
+.bcon{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:2px}.bcrow{display:flex;justify-content:space-between;gap:8px;width:100%;background:none;border:0;padding:6px 0;text-align:left;font:inherit;color:inherit;cursor:pointer;border-bottom:1px dotted var(--line)}.bcrow:last-child{border-bottom:0}.bcrow span:first-child{display:flex;flex-direction:column;min-width:0}.bcrow small{color:var(--muted);font-size:12px;word-break:break-word}.bcrow:hover b{color:var(--blue)}
 .fpanel{gap:12px}.frow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.frow>.lot{min-width:84px}
 .linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--blue);text-decoration:underline;cursor:pointer}
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
@@ -243,7 +246,7 @@ function splitSec(){var pub=JSON.parse(JSON.stringify(DATA)),sec={projects:{},bu
 function unlockWith(pw,interactive){return decryptSec(pw).then(function(o){mergeSec(o);KEYPW=pw;try{sessionStorage.setItem('pw',pw)}catch(e){}client=false;S.unlock=false;S.pwErr='';render();if(interactive)toast('Realtor view unlocked')},function(){if(interactive){S.pwErr='That password is not right. Try again.';render()}})}
 function lockNow(){try{sessionStorage.removeItem('pw')}catch(e){}location.reload()}
 var LOCKT=null;
-function softLock(){clearTimeout(LOCKT);LOCKT=null;if(!KEYPW)return;DATA.projects.forEach(function(p){PF.forEach(function(f){delete p[f]})});DATA.builders.forEach(function(b){BF.forEach(function(f){delete b[f]})});KEYPW=null;try{sessionStorage.removeItem('pw')}catch(e){}client=true;if(S.tab==='builders')S.tab='projects';S.edit=null;S.bedit=null;S.cedit=null;render();toast('Realtor view locked')}
+function softLock(){clearTimeout(LOCKT);LOCKT=null;if(!KEYPW)return;DATA.projects.forEach(function(p){PF.forEach(function(f){delete p[f]})});DATA.builders.forEach(function(b){BF.forEach(function(f){delete b[f]})});KEYPW=null;try{sessionStorage.removeItem('pw')}catch(e){}client=true;if(S.tab==='builders')S.tab='projects';S.edit=null;S.bedit=null;S.cedit=null;S.pwShow=null;render();toast('Realtor view locked')}
 function setView(v){if(PUBLIC)return;if(v==='client'){client=true;if(S.tab==='builders')S.tab='projects';render();clearTimeout(LOCKT);if(KEYPW){LOCKT=setTimeout(function(){if(client)softLock()},30000);toast('Realtor view locks in 30 seconds')}return}
   clearTimeout(LOCKT);LOCKT=null;
   if(KEYPW){client=false;render();return}
@@ -425,7 +428,7 @@ function compareView(){
   '<div class="tools"><button class="btn ghost" data-act="copycmp">Copy summary for client</button></div>'}
 
 function buildersView(){
-  return '<div class="note">Realtor-only ledger. Store portal links, sales reps and your broker/registration IDs here. Never store passwords: use your password manager for logins.</div>'+
+  return '<div class="note">Realtor-only ledger: builder sales reps, portal links and broker IDs. Each project\u2019s own salesperson and portal login are under Project contacts; tap a project to view or edit them.</div>'+
   '<div class="list">'+DATA.builders.map(function(b,i){var n=DATA.projects.filter(function(p){return p.builder===b.name}).length;
    return '<div class="card" style="cursor:default"><div class="top"><div><div class="lot">'+n+' PROJECT'+(n===1?'':'S')+' TRACKED</div><h3>'+esc(b.name)+'</h3></div><button class="chip" data-bedit="'+i+'">Edit</button></div>'+
    '<div class="row"><span>Website</span><span class="v">'+(b.site?'<a href="'+esc(b.site)+'" target="_blank" rel="noopener" style="color:var(--blue)">Open</a>':'—')+'</span></div>'+
@@ -435,7 +438,7 @@ function buildersView(){
    '<div class="row"><span>Email</span><span class="v sel" style="word-break:break-all">'+esc(b.email||'—')+'</span></div>'+
    '<div class="row"><span>Your broker / login ID</span><span class="v sel">'+esc(b.loginId||'—')+'</span></div>'+
    '<div class="row"><span>Co-op / commission</span><span class="v">'+esc(b.coop||'—')+'</span></div>'+
-   (b.notes?'<div class="meta">'+esc(b.notes)+'</div>':'')+'</div>'}).join('')+'</div>'+
+   (b.notes?'<div class="meta">'+esc(b.notes)+'</div>':'')+builderContacts(b)+'</div>'}).join('')+'</div>'+
   '<div class="tools"><button class="btn ghost" data-act="newbuilder">+ Add builder</button></div>'}
 
 function gm(q,p){return 'https://www.google.com/maps/search/'+encodeURIComponent(q)+'/@'+p.lat+','+p.lng+',15z'}
@@ -674,11 +677,17 @@ app.addEventListener('click',function(e){
   if(a==='todo'){todoOpen();return}
   if(a==='cedit'){S.cedit=S.open;render();var ci=document.getElementById('c_name');if(ci)ci.focus();return}
   if(a==='ccancel'){S.cedit=null;render();return}
+  if(a==='cpwtoggle'){var ci2=document.getElementById('c_portalPass');if(ci2){var sh=ci2.type==='password';ci2.type=sh?'text':'password';t.setAttribute('aria-pressed',String(sh));t.setAttribute('aria-label',sh?'Hide password':'Show password');t.innerHTML=sh?EYE_SHUT:EYE_OPEN}return}
+  if(a==='cpwshow'){S.pwShow=S.pwShow===S.open?null:S.open;clearTimeout(window.__pwT);if(S.pwShow)window.__pwT=setTimeout(function(){S.pwShow=null;if(S.open&&!client)render()},20000);render();return}
+  if(a==='ccopy'){var pp=byId(S.open);if(!pp)return;var inf=portalInfo(pp,CON.map[pp.id]);var val=d.f==='pass'?inf.pass:inf.user;
+    var ok=function(){toast(d.f==='pass'?'Password copied':'Username copied')};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(val).then(ok,function(){toast('Copy blocked here. Tap Show and copy it by hand.')});else toast('Copy blocked here. Tap Show and copy it by hand.');return}
   if(a==='csave'){if(!CON.col||!S.open)return;var gv=function(k){var e=document.getElementById('c_'+k);return e?e.value.trim():''};
     var em=gv('email');if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast('That email address doesn\u2019t look right.');return}
-    var rec={name:gv('name'),role:gv('role'),phone:gv('phone'),email:em,notes:gv('notes'),updated:new Date().toISOString().slice(0,10)};
+    var pu=gv('portalUrl');if(pu&&!/^https?:\/\//i.test(pu))pu='https://'+pu;var pe=document.getElementById('c_portalPass');
+    var rec={name:gv('name'),role:gv('role'),phone:gv('phone'),email:em,notes:gv('notes'),portalUrl:pu,portalUser:gv('portalUser'),portalPass:pe?pe.value:'',updated:new Date().toISOString().slice(0,10)};
     var pid=S.open;CON.col.doc(pid).set(rec).then(function(){CON.map[pid]=rec;S.cedit=null;render();toast('Contact saved')},function(){toast('Could not save. Try again.')});return}
-  if(a==='close'){S.unlock=false;S.open=null;S.cedit=null;S.edit=null;S.bedit=null;S.confirm=null;render();return}
+  if(a==='close'){S.unlock=false;S.open=null;S.cedit=null;S.pwShow=null;S.edit=null;S.bedit=null;S.confirm=null;render();return}
   if(a==='new'){S.edit={city:'Kitchener',status:'Verify',pin:'city',lat:43.4516,lng:-80.4925,school:{}};render();return}
   if(a==='fin'){S.showFin=!S.showFin;render();return}
   if(a==='filt'){S.showFilt=!S.showFilt;render();return}
@@ -712,33 +721,46 @@ app.addEventListener('change',function(e){if(e.target.id==='sort'){S.sort=e.targ
 
 /* Project sales contacts: realtor view only, stored in the artifact database (owner/editors only) */
 var CON={on:false,map:{},col:null,loading:true,err:''};
+var EXT='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+function portalInfo(p,c){var b=DATA.builders.filter(function(x){return x.name===p.builder})[0]||{};c=c||{};
+  return {url:c.portalUrl||p.portal||b.portal||'',user:c.portalUser||b.loginId||'',pass:c.portalPass||''}}
 function contactSec(p){if(client)return '';
   var c=CON.map[p.id]||null, b=DATA.builders.filter(function(x){return x.name===p.builder})[0]||{};
-  var bn=b.rep||b.contact||'', h='<div class="sec contact"><h4>Point of contact · realtor only</h4>';
-  if(S.cedit===p.id&&CON.on){c=c||{};
+  var bn=b.rep||b.contact||'', h='<div class="sec contact"><h4>Point of contact &amp; broker portal · realtor only</h4>';
+  if(S.cedit===p.id&&CON.on){c=c||{};var pi=portalInfo(p,c);
     return h+'<div class="form">'+
      '<label>Salesperson name<input id="c_name" value="'+esc(c.name||'')+'" autocomplete="off"></label>'+
      '<label>Role (e.g. Sales rep, Sales manager)<input id="c_role" value="'+esc(c.role||'')+'"></label>'+
      '<label>Phone<input id="c_phone" type="tel" value="'+esc(c.phone||'')+'"></label>'+
      '<label>Email<input id="c_email" type="email" value="'+esc(c.email||'')+'"></label>'+
-     '<label class="full">Notes (best time to call, sales centre hours)<input id="c_notes" value="'+esc(c.notes||'')+'"></label></div>'+
-     '<div class="tools"><button class="btn brass" data-act="csave">Save contact</button><button class="btn ghost" data-act="ccancel">Cancel</button></div></div>'}
+     '<label class="full">Notes (best time to call, sales centre hours)<input id="c_notes" value="'+esc(c.notes||'')+'"></label>'+
+     '<label class="full">Broker portal link<input id="c_portalUrl" type="url" placeholder="'+esc(p.portal||b.portal||'https://')+'" value="'+esc(c.portalUrl||'')+'"></label>'+
+     '<label>Portal username / broker ID<input id="c_portalUser" autocomplete="off" placeholder="'+esc(b.loginId||'')+'" value="'+esc(c.portalUser||'')+'"></label>'+
+     '<label>Portal password<span class="pwwrap"><input id="c_portalPass" type="password" autocomplete="new-password" value="'+esc(c.portalPass||'')+'"><button type="button" class="eye" data-act="cpwtoggle" aria-label="Show password" aria-pressed="false">'+EYE_OPEN+'</button></span></label></div>'+
+     '<div class="tools"><button class="btn brass" data-act="csave">Save</button><button class="btn ghost" data-act="ccancel">Cancel</button></div></div>'}
   if(c&&(c.name||c.phone||c.email)){
     h+='<div class="cperson"><b>'+esc(c.name||'Name not added')+'</b>'+(c.role?'<span class="meta">'+esc(c.role)+'</span>':'')+'</div>'+
      (c.phone?'<div class="row"><span>Phone</span><a class="v" href="tel:'+esc(c.phone.replace(/[^0-9+]/g,''))+'">'+esc(c.phone)+'</a></div>':'')+
      (c.email?'<div class="row"><span>Email</span><a class="v" href="mailto:'+esc(c.email)+'">'+esc(c.email)+'</a></div>':'')+
-     (c.notes?'<div class="meta">'+esc(c.notes)+'</div>':'')+
-     (c.updated?'<div class="meta">Updated '+esc(c.updated)+'</div>':'')}
+     (c.notes?'<div class="meta">'+esc(c.notes)+'</div>':'')}
   else{h+='<div class="meta">No salesperson added for this project yet.</div>';
     if(p.rep)h+='<div class="row"><span>From team sheet</span><span class="v" style="text-align:right;max-width:62%">'+esc(p.rep)+'</span></div>';
     if(bn||b.phone||b.email)h+='<div class="row"><span>Builder’s general contact</span><span class="v" style="text-align:right;max-width:62%">'+esc([bn,b.phone,b.email].filter(Boolean).join(' · '))+'</span></div>'}
-  if(CON.on)h+='<div class="tools"><button class="btn ghost" data-act="cedit">'+(c?'Edit contact':'Add contact')+'</button></div>';
+  var pi=portalInfo(p,c), show=S.pwShow===p.id;
+  h+='<div class="portal"><div class="row"><span>Broker portal</span><span class="v">'+(pi.url?'<a class="plink" href="'+esc(pi.url)+'" target="_blank" rel="noopener">Open portal '+EXT+'</a>':'<span class="meta">Not added</span>')+'</span></div>'+
+    '<div class="row"><span>Username</span><span class="v">'+(pi.user?'<span class="sel">'+esc(pi.user)+'</span> <button class="mini" data-act="ccopy" data-f="user">Copy</button>':'<span class="meta">Not added</span>')+'</span></div>'+
+    '<div class="row"><span>Password</span><span class="v">'+(pi.pass?'<span class="'+(show?'sel':'pwdots')+'">'+(show?esc(pi.pass):'••••••••')+'</span> <button class="mini" data-act="cpwshow">'+(show?'Hide':'Show')+'</button> <button class="mini" data-act="ccopy" data-f="pass">Copy</button>':'<span class="meta">Not added</span>')+'</span></div></div>';
+  if(c&&c.updated)h+='<div class="meta">Updated '+esc(c.updated)+'</div>';
+  if(CON.on)h+='<div class="tools"><button class="btn ghost" data-act="cedit">'+(c?'Edit contact &amp; portal':'Add contact &amp; portal')+'</button></div>';
   else h+='<div class="meta">'+(CON.err||'Contacts can be added or edited only in your private tracker.')+'</div>';
   return h+'</div>'}
+function builderContacts(b){if(!CON.on)return '';var ps=DATA.projects.filter(function(p){return p.builder===b.name}).sort(function(x,y){return x.name.localeCompare(y.name)});if(!ps.length)return '';
+  return '<div class="bcon"><div class="lot">PROJECT CONTACTS</div>'+ps.map(function(p){var c=CON.map[p.id]||{},pi=portalInfo(p,c);
+    return '<button class="bcrow" data-open="'+p.id+'"><span><b>'+esc(p.name)+'</b><small>'+(c.name?esc(c.name)+(c.phone?' · '+esc(c.phone):'')+(c.email?' · '+esc(c.email):''):'No contact yet')+'</small></span><span class="meta">'+(pi.url?'Portal':'')+(pi.pass?' · login saved':'')+'</span></button>'}).join('')+'</div>'}
 (async function(){try{if(!window.claude||!window.claude.use)return;var db=await window.claude.use('db');if(!db)return;
-  CON.col=db.collection('contacts');CON.on=true;if(S.open&&!client&&S.cedit==null)render();
+  CON.col=db.collection('contacts');CON.on=true;if(!client&&S.cedit==null&&(S.open||S.tab==='builders'))render();
   CON.col.onSnapshot(function(q){var m={};q.docs.forEach(function(d){m[d.id]=d.data()||{}});CON.map=m;CON.loading=false;
-    if(S.open&&!client&&S.cedit==null)render()},
+    if(!client&&S.cedit==null&&(S.open||S.tab==='builders'))render()},
    function(err){CON.on=false;CON.err=(err&&err.code==='permission_denied')?'Only the tracker owner can see contacts.':'Contacts can’t be loaded right now.';if(S.open&&!client)render()});
 }catch(e){}})();
 
