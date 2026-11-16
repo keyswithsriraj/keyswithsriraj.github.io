@@ -733,7 +733,7 @@ function contactSec(p){if(client)return '';
     if(p.rep)h+='<div class="row"><span>From team sheet</span><span class="v" style="text-align:right;max-width:62%">'+esc(p.rep)+'</span></div>';
     if(bn||b.phone||b.email)h+='<div class="row"><span>Builder’s general contact</span><span class="v" style="text-align:right;max-width:62%">'+esc([bn,b.phone,b.email].filter(Boolean).join(' · '))+'</span></div>'}
   if(CON.on)h+='<div class="tools"><button class="btn ghost" data-act="cedit">'+(c?'Edit contact':'Add contact')+'</button></div>';
-  else h+='<div class="meta">'+(CON.err||'Open the tracker in Claude to add or edit contacts.')+'</div>';
+  else h+='<div class="meta">'+(CON.err||'Contacts can be added or edited only in your private tracker.')+'</div>';
   return h+'</div>'}
 (async function(){try{if(!window.claude||!window.claude.use)return;var db=await window.claude.use('db');if(!db)return;
   CON.col=db.collection('contacts');CON.on=true;if(S.open&&!client&&S.cedit==null)render();
