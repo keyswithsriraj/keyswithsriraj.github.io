@@ -5,27 +5,27 @@
 <style id="s">
 /* Layout: site-plan board — sticky header + tabs, card list / schematic map / builder ledger, detail sheet slides over */
 :root{
-  --bg:#f1f5fb; --panel:#ffffff; --ink:#0b1f3a; --muted:#4a5f80; --line:#d2deef;
-  --brass:#1d4ed8; --brass-ink:#1e40af; --blue:#1d56b8; --hdr-accent:#8fb8ff;
-  --ok:#0a2f6b; --warn:#2f74db; --bad:#9fbff0; --bad-ink:#3b6cc0; --soft:#e6eef9; --scrim:rgba(11,31,58,.5);
-  --s1:#0a2f6b; --s2:#2563eb; --s3:#6f9ee8; --s4:#c2d6f5; --badge:#ffffff; --badge-ink:#0a2f6b; --badge-muted:#4a5f80;
+  --bg:#fbf5f5; --panel:#ffffff; --ink:#2a0b0f; --muted:#7a4b51; --line:#efd7da;
+  --brass:#c8102e; --brass-ink:#a10d25; --blue:#b3122a; --hdr:#b0101f; --hdr-fg:#ffffff; --hdr-accent:#ffd6db;
+  --ok:#7a0a1a; --warn:#d0283d; --bad:#f5b9c0; --bad-ink:#b3394a; --soft:#faeaec; --scrim:rgba(42,11,15,.5);
+  --s1:#7a0a1a; --s2:#c8102e; --s3:#e8737f; --s4:#f7ccd1; --badge:#ffffff; --badge-ink:#9e0f22; --badge-muted:#7a4b51;
   --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
   --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0a1322; --panel:#101c31; --ink:#e3ecfa; --muted:#93a9cc; --line:#233552;
-  --brass:#6fa3ff; --brass-ink:#9cc0ff; --blue:#7fb0ff; --hdr-accent:#1d4ed8;
-  --ok:#bcd5ff; --warn:#4f8ef0; --bad:#2a4f8f; --bad-ink:#8fb2ec; --soft:#16263f; --scrim:rgba(2,8,20,.6); --s1:#cfe0ff; --s2:#7fb0ff; --s3:#3d73d6; --s4:#1f3a68; color-scheme:dark}}
+  --bg:#1a0709; --panel:#260d11; --ink:#f9eaec; --muted:#cfa3a9; --line:#44191f;
+  --brass:#ff5a6e; --brass-ink:#ff8d9a; --blue:#ff8d9a; --hdr:#7d0a19; --hdr-accent:#ffc7ce;
+  --ok:#ffc7ce; --warn:#ff5a6e; --bad:#6b1a24; --bad-ink:#ff9aa6; --soft:#2f1015; --scrim:rgba(10,2,3,.6); --s1:#ffd3d8; --s2:#ff7d8c; --s3:#d43349; --s4:#5e1820; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0a1322; --panel:#101c31; --ink:#e3ecfa; --muted:#93a9cc; --line:#233552;
-  --brass:#6fa3ff; --brass-ink:#9cc0ff; --blue:#7fb0ff; --hdr-accent:#1d4ed8;
-  --ok:#bcd5ff; --warn:#4f8ef0; --bad:#2a4f8f; --bad-ink:#8fb2ec; --soft:#16263f; --scrim:rgba(2,8,20,.6); --s1:#cfe0ff; --s2:#7fb0ff; --s3:#3d73d6; --s4:#1f3a68; color-scheme:dark}
+  --bg:#1a0709; --panel:#260d11; --ink:#f9eaec; --muted:#cfa3a9; --line:#44191f;
+  --brass:#ff5a6e; --brass-ink:#ff8d9a; --blue:#ff8d9a; --hdr:#7d0a19; --hdr-accent:#ffc7ce;
+  --ok:#ffc7ce; --warn:#ff5a6e; --bad:#6b1a24; --bad-ink:#ff9aa6; --soft:#2f1015; --scrim:rgba(10,2,3,.6); --s1:#ffd3d8; --s2:#ff7d8c; --s3:#d43349; --s4:#5e1820; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--hdr)}
 .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1080px;margin:0 auto}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ink);color:var(--bg)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--hdr);color:var(--hdr-fg)}
 header .wrap{padding-block:12px 0;display:flex;flex-direction:column;gap:10px}
 .brandrow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:16px;row-gap:8px}
 .brandrow>.brand{grid-row:1/span 2}.brandrow>.hlinks{grid-column:2;justify-content:flex-end}.brandrow>.tools{grid-column:2;justify-self:end}
@@ -39,7 +39,7 @@ header .wrap{padding-block:12px 0;display:flex;flex-direction:column;gap:10px}
 .hello{font:600 12px var(--f-body);padding:2px 9px;border-radius:999px;border:1px solid var(--hdr-accent);color:var(--hdr-accent);font-family:var(--f-body),"Hind Siliguri","Noto Sans Bengali",sans-serif}
 @media (prefers-reduced-motion:no-preference){.hello.in{animation:hin .45s ease-out}@keyframes hin{from{opacity:0;transform:translateY(4px)}}}
 .phonepill{display:inline-flex;align-items:center;gap:6px;color:inherit;text-decoration:none;font:600 13px var(--f-mono);border:1px solid var(--hdr-accent);border-radius:999px;padding:7px 12px;font-variant-numeric:tabular-nums}
-.phonepill:hover{background:var(--hdr-accent);color:var(--ink)}
+.phonepill:hover{background:var(--hdr-accent);color:var(--hdr)}
 .promises{display:grid;grid-template-columns:minmax(150px,.8fr) repeat(3,minmax(0,1fr));gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 .plead{display:flex;flex-direction:column;gap:4px}.plead b{font-size:16px;line-height:1.25}
 .pr{display:flex;gap:10px;min-width:0}.pn{font:600 12px var(--f-mono);color:var(--brass-ink);padding-top:2px}
@@ -126,7 +126,7 @@ td a{color:var(--blue)}
 .cmp td,.cmp th{min-width:150px}
 .seg{display:inline-flex;border:1px solid var(--hdr-accent);border-radius:6px;overflow:hidden}
 .seg button{background:none;border:0;color:inherit;font:600 12px var(--f-body);padding:8px 12px;cursor:pointer;letter-spacing:.03em}
-.seg button[aria-pressed="true"]{background:var(--hdr-accent);color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--hdr-accent);color:var(--hdr)}
 .comps{font-size:13px}.comps td,.comps th{padding:8px 6px}.comps .n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 .comps tr.me{background:var(--soft)}.comps tbody tr[data-open]:hover{background:var(--soft)}
 .sel{user-select:all}
@@ -305,7 +305,6 @@ function projectsView(){
    '<div class="stat" style="border-color:var(--warn)"><b>'+ver+'</b><small>Need verifying</small></div></div>';
   if(!client&&DATA.sync&&DATA.sync.at) h+='<div class="note" style="border-color:var(--ok)"><b>Team sheet sync:</b> last change '+esc(DATA.sync.at)+(DATA.sync.changes&&DATA.sync.changes.length?' · '+esc(DATA.sync.changes.slice(0,6).join('; '))+(DATA.sync.changes.length>6?' …':''):'')+'</div>';
   if(!client) h+='<div class="note">Data from public aggregator pages and the team builder sheet (spring 2026), merged '+esc(DATA.updated)+'. Prices and dates go stale fast. Confirm each project in its broker portal, then set "Last verified".</div>';
-  h+=PROMISES;
   h+='<div class="tools"><input type="search" id="q" placeholder="Search project, builder, area" value="'+esc(S.q)+'"><select id="sort"><option value="name">Sort: Name</option><option value="price"'+(S.sort==='price'?' selected':'')+'>Sort: Price from</option><option value="city"'+(S.sort==='city'?' selected':'')+'>Sort: City</option><option value="be"'+(S.sort==='be'?' selected':'')+'>Sort: Lowest break-even rent</option><option value="cf"'+(S.sort==='cf'?' selected':'')+'>Sort: Best cash flow</option></select><button class="btn ghost" data-act="fin">Investor assumptions</button><button class="btn ghost" data-act="dlhtml" hidden id="dl1">Download dashboard</button><button class="btn ghost" data-act="dlcsv" hidden id="dl2">Download CSV</button>'+(client?'':'<button class="btn brass" data-act="new">+ Add project</button>')+'</div>';
   h+='<div class="chips">'+['All'].concat(CITIES).map(function(c){return '<button class="chip" data-city="'+c+'" aria-pressed="'+(S.city===c)+'">'+c+'</button>'}).join('')+'</div>';
   var areas=DATA.projects.filter(function(p){return p.area&&(S.city==='All'||p.city===S.city)}).map(function(p){return p.area}).filter(function(a,i,arr){return arr.indexOf(a)===i}).sort();
@@ -341,7 +340,7 @@ function loadLeaflet(){
   if(LF.state!=='idle')return; if(window.L){LF.state='ready';return}
   LF.state='loading';var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
   sc.onload=function(){LF.state='ready';render()};sc.onerror=function(){LF.state='off';render()};document.head.appendChild(sc)}
-function tok(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#2563eb'}
+function tok(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#c8102e'}
 function liveMapView(){
   var head='<div class="chips">'+['All'].concat(CITIES).map(function(c){return '<button class="chip" data-city="'+c+'" aria-pressed="'+(S.city===c)+'">'+c+'</button>'}).join('')+'<button class="chip" data-act="schmap" aria-pressed="'+(!!S.schMap)+'">Show schools</button></div>';
   return head+'<div class="mapbox"><div id="lmap" class="lmap" role="application" aria-label="Map of projects"></div><div class="legend"><span><i style="background:var(--brass)"></i>Kitchener</span><span><i style="background:var(--warn)"></i>Waterloo</span><span><i style="background:var(--ok)"></i>Cambridge</span><span><i style="background:var(--bad-ink)"></i>Guelph</span><span>Hollow pin = approximate location</span>'+(S.schMap?'<span><i style="background:var(--s2);border-radius:2px"></i>School, darker = higher EQAO</span>':'')+'</div></div>'+
